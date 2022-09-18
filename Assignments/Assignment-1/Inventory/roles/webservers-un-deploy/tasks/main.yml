@@ -1,0 +1,7 @@
+---
+# tasks file for webservers-un-deploy#
+- name: stoping apache
+  service:
+    name: apache2
+    state: stopped
+    enabled: yes

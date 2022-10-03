@@ -9,3 +9,5 @@ Submit a Word Document of your work, including screenshots from your trailhead a
 
 
 SOLUTION
+
+Google Doc Link - https://docs.google.com/document/d/1jjMwE2gYSitefLgLoNpzGFZuLLsYwY16_EmJacWz7pk/

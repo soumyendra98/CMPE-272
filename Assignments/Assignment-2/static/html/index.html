@@ -1,0 +1,222 @@
+<!-- Soumyendra -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
+        integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
+        integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+        crossorigin="anonymous"></script>
+    <title>CMPE-272 Twitter Assignment</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+        integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+    <style>
+        .center-text {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+    <div class="my-3 p-3 bg-white rounded shadow-sm">
+        <h1 id='username'>User Twitter Feed</h1>
+    </div>
+    <div class="my-3 p-3 bg-white rounded shadow-sm" id="post-status">
+        <h5 class="border-bottom border-gray pb-2 mb-0">Tweet Center</h6>
+        <div class="mb-3">
+            <textarea id='tweet' rows="4" cols="50" maxlength="50" placeholder="Enter status here..."></textarea>
+        </div>
+        <button id="post" onclick="postTweet()">Post Status</button>
+
+    </div>
+
+    <div class="my-3 p-3 bg-white rounded shadow-sm" id="tweet-list">
+        <h5 class="border-bottom border-gray pb-2 mb-0">Your Tweets</h6>
+        <div class="mb-3" id="tweetList"></div>
+        <button id='update' onclick="getAllTweets()">Refresh Tweets</button>
+        <button id='delete' onclick="removeTweet()">Deleting 0 Tweets</button>
+    </div>
+
+
+    <script>
+        var tweetList = [];
+        var deleteList = [];
+        var userId = "";
+        var username = "";
+
+        $(document).ready(function () {
+            $.ajax(
+                {
+                    method: 'GET',
+                    url: '/tweet',
+                    success: function (response, status) {
+                        if (!("errors" in response)) {
+                            userId = response.id_str;
+                            username = response.name;
+                            renderUsername();
+                            getAllTweets();
+                        } else {
+                            // Show error message tweet failed
+                            console.log(response.errors);
+                        }
+                    }
+                }
+            )
+        })
+
+        function renderUsername() {
+            var h1 = document.getElementById('username');
+            h1.innerText = username + ' Twitter Feed';
+        }
+
+
+        function getAllTweets() {
+            tweetList = [];
+            $.ajax(
+                {
+                    method: 'GET',
+                    url: '/tweet/all/' + userId,
+                    success: function (response, status) {
+                        if (!("errors" in response)) {
+                            response.forEach(function (tweet) {
+                                tweetList.push(parseTweet(tweet));
+                            })
+                            renderList();
+                        } else {
+                            // Show error message tweet failed
+                            console.log(response.errors);
+                        }
+                    }
+                }
+            )
+        }
+        function parseTweet(tweet) {
+            return {
+                tweet: tweet.text,
+                id: tweet.id_str,
+            }
+        }
+        function postTweet() {
+            var textBox = document.getElementById("tweet");
+            var tweet = textBox.value;
+            console.log('Tweet: ' + tweet);
+            // Post tweet
+            var tweetItem = {}
+            $.ajax(
+                {
+                    method: 'POST',
+                    url: '/tweet/update',
+                    data: { tweet: tweet },
+                    dataType: "json",
+                    success: function (response, status) {
+                        if (!("errors" in response)) {
+                            tweetItem = {
+                                tweet: response.text,
+                                id: response.id_str
+                            }
+                            tweetList.push(tweetItem);
+                            renderList();
+                        } else {
+                            // Show error message tweet failed
+                            console.log(response.errors);
+                        }
+                    }
+                }
+            )
+
+        }
+
+        function handleCheckBox(item) {
+            var checkbox = document.getElementById(item.id);
+            if (checkbox.checked) {
+                deleteList.push(item);
+            }
+            else {
+                deleteList = removeElement(deleteList, item);
+            }
+
+            renderDeleteButton();
+        }
+
+        function renderDeleteButton() {
+            var deleteButton = document.getElementById('delete');
+            deleteButton.innerText = "Deleting " + deleteList.length + " Tweets";
+        }
+        function removeElement(arr, remove) {
+            return arr.filter(function (ele) {
+                return ele.id != remove.id;
+            });
+        }
+
+        function renderList() {
+            var list = document.getElementById('tweetList');
+            list.innerHTML = "";
+            for (var tweet in tweetList) {
+                if (tweetList.hasOwnProperty(tweet)) {
+                    var pair = tweetList[tweet];
+                    var checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.id = pair.id;
+                    checkbox.value = pair.tweet;
+                    checkbox.addEventListener("click", function (event) {
+                        handleCheckBox(event.target);
+                    });
+
+                    list.appendChild(checkbox);
+
+                    var label = document.createElement('label')
+                    label.htmlFor = pair.tweet;
+                    label.appendChild(document.createTextNode(pair.tweet));
+
+                    list.appendChild(label);
+                    list.appendChild(document.createElement("br"));
+                }
+            }
+
+            deleteList.forEach(function (item) {
+                var checkbox = document.getElementById(item.id);
+                checkbox.checked = true;
+            })
+        }
+
+        function removeTweet() {
+            deleteList.forEach(function (tweet) {
+                $.ajax(
+                    {
+                        method: 'POST',
+                        url: '/tweet/delete/' + tweet.id,
+                        success: function (response, status) {
+                            if (!("errors" in response)) {
+                                tweetList = removeElement(tweetList, tweet)
+                                deleteList = removeElement(deleteList, tweet)
+                                if (deleteList.length === 0) {
+                                    renderList();
+                                    renderDeleteButton();
+                                }
+                            } else {
+                                // Show error message tweet failed
+                                console.log(response.errors);
+                            }
+                        }
+                    }
+                )
+            })
+        }
+
+    </script>
+</body>
+
+</html>
+

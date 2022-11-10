@@ -1,0 +1,12 @@
+
+service: aws-nodejs
+provider:
+  name: aws
+  runtime: nodejs12.x
+stage: dev
+region: us-east-1
+role: arn:aws:iam::929884475321:role/ServerlessDemo
+
+functions:
+  hello:
+    handler: handler.FirstServerless
